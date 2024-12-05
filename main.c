@@ -1,83 +1,106 @@
-#//include <pthread.h>
-//#include "semaphore.h" 
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-// Defines the structure of the node type
-typedef struct Node{
-    //data field, this is the value in the node
-    //doesn't have to be a node
+typedef struct Node {
     int data;
-    //pointer to the next node
     struct Node *next;
-}Node;
+} Node;
 
-//function needed to create a new node, and return a pointer to the current node
-Node *createNode(int data, Node *head) {
-    Node *newNode = (Node *)malloc(sizeof(Node)); // Allocate memory for the new node
-    newNode->data = data;
-    newNode->next = NULL;
+typedef struct LinkedList {
+    Node *head;
+    pthread_rwlock_t lock; // Reader-writer lock for synchronization
+} LinkedList;
 
-    if (head == NULL) {
-        // If the list is empty, the new node becomes the head
-        return newNode;
-    }
+typedef struct ThreadData {
+    char *name;          // Thread name (e.g., "t1", "t2", "t3")
+    LinkedList *list;    // Pointer to the linked list
+} ThreadData;
 
-    Node *temp = head;
-    // Traverse to the end of the list
-    while (temp->next != NULL) {
-        temp = temp->next;
-    }
-
-    // Append the new node at the end
-    temp->next = newNode;
-
-    // Return the head of the list
-    return head;
+// Initialize linked list
+LinkedList *createList() {
+    LinkedList *list = (LinkedList *)malloc(sizeof(LinkedList));
+    list->head = NULL;
+    pthread_rwlock_init(&list->lock, NULL);
+    return list;
 }
-Node *deleteNode(int del, Node *head) {
-    if (head == NULL) {
-        // Empty list, nothing to delete
-        return NULL;
-    }
 
-    if (head->data == del) {
-        // If the first node contains the data to delete
-        Node *temp = head->next; // Save the pointer to the next node
-        
-        free(head);              // Free the current head
-        
-        return temp;             // Return the new head
+// Destroy linked list
+void destroyList(LinkedList *list) {
+    Node *current = list->head;
+    while (current != NULL) {
+        Node *temp = current;
+        current = current->next;
+        free(temp);
     }
-    Node *temp = head;
-    while(temp->next->data!=del){
-        temp = temp->next;
-    }
-    temp->next = temp->next->next;
-    return head;
-    
+    pthread_rwlock_destroy(&list->lock);
+    free(list);
 }
-Node printList(struct Node *head){
-    printf("Linked List: ");
 
-    Node *temp = head;
-    while(temp)
-    {
+void *reader(void *arg) {
+    ThreadData *data = (ThreadData *)arg;
+    for (int i = 0; i < 5; i++) {
+        pthread_rwlock_rdlock(&data->list->lock); // Acquire read lock
+        printf("[%s] Linked List:", data->name);
+        Node *temp = data->list->head;
+        while (temp != NULL) {
+            printf(" %d", temp->data);
+            temp = temp->next;
+        }
         printf("\n");
-        printf("%d", temp->data);
-        
-        temp = temp->next;
+        pthread_rwlock_unlock(&data->list->lock); // Release read lock
+        usleep(100000); // Simulate some delay
     }
+    return NULL;
+}
+
+void *writer(void *arg) {
+    ThreadData *data = (ThreadData *)arg;
+    for (int i = 0; i < 5; i++) {
+        pthread_rwlock_wrlock(&data->list->lock); // Acquire write lock
+        printf("[%s] Adding node with data: %d\n", data->name, i * 10);
+
+        Node *newNode = (Node *)malloc(sizeof(Node));
+        newNode->data = i * 10;
+        newNode->next = NULL;
+
+        if (data->list->head == NULL) {
+            data->list->head = newNode;
+        } else {
+            Node *temp = data->list->head;
+            while (temp->next != NULL) {
+                temp = temp->next;
+            }
+            temp->next = newNode;
+        }
+
+        pthread_rwlock_unlock(&data->list->lock); // Release write lock
+        usleep(150000); // Simulate some delay
+    }
+    return NULL;
 }
 
 int main() {
-    Node *first = NULL;
-    first = createNode(10,first);
-    first = createNode(20,first);
-    first = createNode(30,first);
-    
-    printList(first);
-    first = deleteNode(20,first);
-    printList(first);
+    LinkedList *list = createList();
+
+    pthread_t t1, t2, t3;
+    ThreadData data1 = {"t1", list};
+    ThreadData data2 = {"t2", list};
+    ThreadData data3 = {"t3", list};
+
+    // Create threads
+    pthread_create(&t1, NULL, writer, (void *)&data1);
+    pthread_create(&t2, NULL, reader, (void *)&data2);
+    pthread_create(&t3, NULL, reader, (void *)&data3);
+
+    // Wait for threads to finish
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    pthread_join(t3, NULL);
+
+    // Destroy the list
+    destroyList(list);
+
     return 0;
 }
