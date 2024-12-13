@@ -455,13 +455,14 @@ int main()
     pthread_t threads[num_threads];
     for (int i = 0; i < num_threads; i++)
     {
-        td[i].thread_id;
+        td[i].thread_id = i;
         td[i].lock = lock;
         td[i].bst = bst;
         td[i].value = rand() % 20;
         td[i].func = tree_insert;
         if (pthread_create(&threads[i], NULL, thread_gen, &td[i]) != 0)
-        {
+        {   
+            
             perror("pthread_create failed");
             exit(EXIT_FAILURE);
         }
