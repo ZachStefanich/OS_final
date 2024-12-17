@@ -6,6 +6,9 @@ Ian McNiesh, Zachary Stefanich, Randy Franzmeier
 ## Overview
 This project deals with synchronizing a binary search tree being implemented in a multithreaded environment. In addition to having the tree, we will have important functions like insert, delete, and add, as well as tests to assure it's operating as expected.
 
+## How to Run
+In order to run this program, all you need is a C compiler and to make sure you have a Python extension installed to analyze the results. It's a good idea if you are using a Linux subsystem to use sudo apt update to make sure everything is up to date, and also verify that gcc is intalled by running gcc.
+
 ## Kanban board (tasks)
 [Click Here](https://github.com/users/randyfranzmeier/projects/1/views/1) 
 
