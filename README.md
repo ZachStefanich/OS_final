@@ -9,6 +9,13 @@ This project deals with synchronizing a binary search tree being implemented in 
 ## How to Run
 In order to run this program, all you need is a C compiler and to make sure you have a Python extension installed to analyze the results. It's a good idea if you are using a Linux subsystem to use sudo apt update to make sure everything is up to date, and also verify that gcc is intalled by running gcc.
 
+## About Each Program
+
+### concurrency.c
+concurrency.c is the main file of this project. The purpose of concurrency.c is to demonstrate the use of locks on a binary search tree while printing the operations each tree goes through for the threads.
+### timer.c 
+timer.c adds on to concurrency.c with methods that don't have locks for the single threaded binary search tree, and compares the time it takes to undergo the operations like inserting, deleting, and traversing the tree.
+
 ## Kanban board (tasks)
 [Click Here](https://github.com/users/randyfranzmeier/projects/1/views/1) 
 
